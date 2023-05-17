@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../db/mydb.db"
+}
+
+model User {
+  id        Int    @id @default(autoincrement())
+  email     String @unique
+  firstName String
+  lastName  String
+  password  String
+
+  role GlobalRole?
+
+  team      Team?     @relation(fields: [teamId], references: [id])
+  teamId    Int?
+  team_role TeamRole?
+
+  org    Organization? @relation(fields: [org_id], references: [id])
+  org_id Int?
+
+  consultanthelp ConsultHelp[]
+  outsourced     Outsourced[]
+}
+
+model GlobalRole {
+  value   String @default("USER")
+  user_id Int    @unique
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model TeamRole {
+  value   String @default("MEMBER")
+  user_id Int    @unique
+  user    User   @relation(fields: [user_id], references: [id])
+
+  team_id Int
+  team    Team? @relation(fields: [team_id], references: [id], onDelete: Cascade)
+}
+
+model Team {
+  id      Int       @id @default(autoincrement())
+  money   Int       @default(1000000)
+  name    String    @unique
+  nextTax DateTime?
+
+  history        TeamHistory[]
+  team_role      TeamRole[]
+  member         User[]
+  tasks          TaskTeam[]
+  consultanthelp ConsultHelp[]
+  outsourced     Outsourced[]
+}
+
+model TeamHistory {
+  id Int @id @default(autoincrement())
+
+  team_id Int?
+  team    Team? @relation(fields: [team_id], references: [id])
+
+  value     Int
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id          Int     @id @default(autoincrement())
+  image       String  @default("image/org/default_org.jpg")
+  name        String  @unique
+  description String?
+
+  task     Task[]
+  employee User[]
+}
+
+model TaskTeam {
+  team_id Int
+  team    Team @relation(fields: [team_id], references: [id], onDelete: Cascade)
+
+  task_id Int
+  task    Task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  status Int @default(0)
+
+  gettingStarted DateTime?
+  endOfWork      DateTime?
+
+  accepted DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@id([team_id, task_id])
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+
+  title           String
+  description     String
+  reward          Int    @default(50000)
+  recommendedTime Int    @default(5)
+
+  complexity String @default("Легко")
+  status     Int    @default(0)
+
+  org_id Int
+  org    Organization? @relation(fields: [org_id], references: [id])
+
+  team TaskTeam[]
+}
+
+model ConsultHelp {
+  id          Int     @id @default(autoincrement())
+  description String?
+  status      Int     @default(0)
+
+  consultant_id Int
+  cosultant     User @relation(fields: [consultant_id], references: [id])
+
+  team_id Int
+  team    Team @relation(fields: [team_id], references: [id])
+
+  cost      Int
+  crearedAt DateTime @default(now())
+}
+
+model Outsourced {
+  id Int @id @default(autoincrement())
+
+  description String?
+  cost        Int
+
+  executor_id   Int
+  executor      User    @relation(fields: [executor_id], references: [id])
+  executor_role String?
+
+  team_id Int?
+  team    Team? @relation(fields: [team_id], references: [id])
+
+  status Int @default(0)
+}
+
+// enum Status {
+//   pending = 0,
+//   inProgress = 1,
+//   completed = 2,
+//   failed = 3
+// }
+
+// enum Role {
+//   USER
+//   ADMIN
+//   EMPLOYER
+//   CONSULTANT
+// }
